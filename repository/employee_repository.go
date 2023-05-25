@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/jutionck/golang-db-sinar-harapan-makmur/model/entity"
 )
@@ -26,7 +25,7 @@ func (e *employeeRepository) Create(newData entity.Employee) error {
 	}
 
 	namedArgs := map[string]interface{}{
-		"id":           uuid.New().String(),
+		"id":           newData.Id.String,
 		"first_name":   newData.FirstName.String,
 		"last_name":    newData.LastName.String,
 		"address":      newData.Address.String,

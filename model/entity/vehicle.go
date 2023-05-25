@@ -3,15 +3,15 @@ package entity
 import "github.com/google/uuid"
 
 type Vehicle struct {
-	Id             string
-	Brand          string
-	Model          string
-	ProductionYear int `db:"production_year"`
-	Color          string
-	IsAutomatic    bool `db:"is_automatic"`
-	Stock          int
-	SalePrice      int    `db:"sale_price"`
-	Status         string // enum: "Baru" & "Bekas"
+	Id             string `json:"id"`
+	Brand          string `json:"brand"`
+	Model          string `json:"model"`
+	ProductionYear int    `db:"production_year" json:"productionYear"`
+	Color          string `json:"color"`
+	IsAutomatic    bool   `db:"is_automatic" json:"isAutomatic"`
+	Stock          int    `json:"stock"`
+	SalePrice      int    `db:"sale_price" json:"salePrice"`
+	Status         string `json:"status"` // enum: "Baru" & "Bekas"
 }
 
 func (v *Vehicle) IsValidStatus() bool {

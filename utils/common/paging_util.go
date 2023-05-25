@@ -19,7 +19,10 @@ func GetPaginationParams(params dto.PaginationParam) dto.PaginationQuery {
 	}
 
 	if params.Limit == 0 {
-		LoadFileEnv(".env")
+		err := LoadFileEnv(".env")
+		if err != nil {
+			return dto.PaginationQuery{}
+		}
 		n, _ := strconv.Atoi(os.Getenv("DEFAULT_ROWS_PER_PAGE"))
 		take = n
 	} else {

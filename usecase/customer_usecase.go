@@ -22,28 +22,23 @@ type customerUseCase struct {
 }
 
 func (c *customerUseCase) RegisterNewCustomer(newCustomer entity.Customer) error {
-	isExists, _ := c.GetCustomer(newCustomer.Id)
-	if isExists.Id == newCustomer.Id {
-		return fmt.Errorf("Customer with ID: %v exists", newCustomer.Id)
-	}
-
 	isEmailExist, _ := c.customerRepo.GetByEmail(newCustomer.Email)
 	if isEmailExist.Email == newCustomer.Email {
-		return fmt.Errorf("Customer with email: %v exists", newCustomer.Email)
+		return fmt.Errorf("customer with email: %v exists", newCustomer.Email)
 	}
 
 	isPhoneNumberExist, _ := c.customerRepo.GetByPhoneNumber(newCustomer.PhoneNumber)
 	if isPhoneNumberExist.PhoneNumber == newCustomer.PhoneNumber {
-		return fmt.Errorf("Customer with phone number: %v exists", newCustomer.PhoneNumber)
+		return fmt.Errorf("customer with phone number: %v exists", newCustomer.PhoneNumber)
 	}
 
 	if newCustomer.FirstName == "" || newCustomer.LastName == "" || newCustomer.PhoneNumber == "" || newCustomer.Email == "" {
 		return fmt.Errorf("FirstName, LastName, PhoneNumber and Email are required fields")
 	}
-
+	newCustomer.SetId()
 	err := c.customerRepo.Create(newCustomer)
 	if err != nil {
-		return fmt.Errorf("Failed to create new vehicle: %v", err)
+		return fmt.Errorf("failed to create new vehicle: %v", err)
 	}
 
 	return nil
@@ -61,12 +56,12 @@ func (c *customerUseCase) UpdateCustomer(newCustomer entity.Customer) error {
 	isEmailExist, _ := c.customerRepo.GetByEmail(newCustomer.Email)
 
 	if isEmailExist.Email == newCustomer.Email && isEmailExist.Id != newCustomer.Id {
-		return fmt.Errorf("Customer with email: %v exists", newCustomer.Email)
+		return fmt.Errorf("customer with email: %v exists", newCustomer.Email)
 	}
 
 	isPhoneNumberExist, _ := c.customerRepo.GetByPhoneNumber(newCustomer.PhoneNumber)
 	if isPhoneNumberExist.PhoneNumber == newCustomer.PhoneNumber && isPhoneNumberExist.Id != newCustomer.Id {
-		return fmt.Errorf("Customer with phone number: %v exists", newCustomer.PhoneNumber)
+		return fmt.Errorf("customer with phone number: %v exists", newCustomer.PhoneNumber)
 	}
 
 	if newCustomer.FirstName == "" || newCustomer.LastName == "" || newCustomer.PhoneNumber == "" || newCustomer.Email == "" {
@@ -75,7 +70,7 @@ func (c *customerUseCase) UpdateCustomer(newCustomer entity.Customer) error {
 
 	err := c.customerRepo.Update(newCustomer)
 	if err != nil {
-		return fmt.Errorf("Failed to udpate vehicle: %v", err)
+		return fmt.Errorf("failed to udpate vehicle: %v", err)
 	}
 
 	return nil

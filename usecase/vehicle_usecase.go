@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"fmt"
-
 	"github.com/jutionck/golang-db-sinar-harapan-makmur/model/dto"
 	"github.com/jutionck/golang-db-sinar-harapan-makmur/model/entity"
 	"github.com/jutionck/golang-db-sinar-harapan-makmur/repository"
@@ -32,7 +31,7 @@ func (v *vehicleUseCase) RegisterNewVehicle(newVehicle entity.Vehicle) error {
 
 	err := v.vehicleRepo.Create(newVehicle)
 	if err != nil {
-		return fmt.Errorf("Failed to create new vehicle: %v", err)
+		return fmt.Errorf("failed to create new vehicle: %v", err)
 	}
 
 	return nil
@@ -53,7 +52,7 @@ func (v *vehicleUseCase) UpdateVehicle(newVehicle entity.Vehicle) error {
 
 	err := v.vehicleRepo.Update(newVehicle)
 	if err != nil {
-		return fmt.Errorf("Failed to udpate vehicle: %v", err)
+		return fmt.Errorf("failed to udpate vehicle: %v", err)
 	}
 
 	return nil
@@ -65,18 +64,18 @@ func (v *vehicleUseCase) DeleteVehicle(id string) error {
 
 func (v *vehicleUseCase) Paging(requestQueryParams dto.RequestQueryParams) ([]entity.Vehicle, dto.Paging, error) {
 	if !requestQueryParams.QueryParams.IsSortValid() {
-		return nil, dto.Paging{}, fmt.Errorf("Invalid sort by: %s", requestQueryParams.QueryParams.Sort)
+		return nil, dto.Paging{}, fmt.Errorf("invalid sort by: %s", requestQueryParams.QueryParams.Sort)
 	}
 	return v.vehicleRepo.Paging(requestQueryParams)
 }
 
 func vehicleValidation(payload entity.Vehicle) error {
 	if payload.Brand == "" || payload.Model == "" || payload.Color == "" {
-		return fmt.Errorf("Brand, Model, and Color are required fields")
+		return fmt.Errorf("brand, Model, and Color are required fields")
 	}
 
 	if !payload.IsValidStatus() {
-		return fmt.Errorf("Invalid status: %s", payload.Status)
+		return fmt.Errorf("invalid status: %s", payload.Status)
 	}
 
 	if payload.SalePrice < 0 || payload.SalePrice == 0 {

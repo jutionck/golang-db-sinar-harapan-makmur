@@ -27,35 +27,34 @@ func (t *transactionUsecase) RegisterNewTransaction(newData entity.Transaction) 
 	// get vehicle
 	vehicle, err := t.vehicleUseCase.GetVehicle(newData.Vehicle.Id)
 	if err != nil {
-		return fmt.Errorf("Vehicle with ID: %s not exists", newData.Vehicle.Id)
+		return fmt.Errorf("vehicle with ID: %s not exists", newData.Vehicle.Id)
 	}
 
 	if vehicle.Stock < newData.Qty {
-		return fmt.Errorf("Stock of vehicle is not enough")
+		return fmt.Errorf("stock of vehicle is not enough")
 	}
 
 	// get customer
 	customer, err := t.customerUseCase.GetCustomer(newData.Customer.Id)
 	if err != nil {
-		return fmt.Errorf("Customer with ID: %s not exists", newData.Customer.Id)
+		return fmt.Errorf("customer with ID: %s not exists", newData.Customer.Id)
 	}
 
 	// get employee
 	employee, err := t.employeeUseCase.GetEmployee(newData.Employee.Id.String)
 	if err != nil {
-		return fmt.Errorf("Employee with ID: %s not exists", newData.Employee.Id.String)
+		return fmt.Errorf("employee with ID: %v not exists", newData.Employee.Id)
 	}
 
 	newData.Vehicle = vehicle
 	newData.Customer = customer
 	newData.Employee = employee
-	td, _ := time.Parse("2006-01-02", time.Now().String())
-	newData.TransactionDate = td
+	newData.TransactionDate = time.Now()
 	newData.PaymentAmount = vehicle.SalePrice
 
 	err = t.vehicleUseCase.UpdateVehicleStock(newData.Qty, vehicle.Id)
 	if err != nil {
-		return fmt.Errorf("Failed update vehicle stock")
+		return fmt.Errorf("failed update vehicle stock")
 	}
 
 	return t.transactionRepo.Create(newData)

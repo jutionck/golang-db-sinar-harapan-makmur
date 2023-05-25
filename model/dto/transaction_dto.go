@@ -16,3 +16,12 @@ type TransactionResponseDto struct {
 	Type            string
 	PaymentAmount   int `db:"payment_amount"`
 }
+
+type TransactionRequestDto struct {
+	Id         string `json:"id"`
+	VehicleId  string `json:"vehicleId"`
+	CustomerId string `json:"customerId"`
+	EmployeeId string `json:"employeeId"`
+	Type       string `json:"type"`
+	Qty        int    `json:"qty"`
+}
