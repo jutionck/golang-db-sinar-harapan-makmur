@@ -6,35 +6,23 @@ import (
 	"github.com/jutionck/golang-db-sinar-harapan-makmur/config"
 	"github.com/jutionck/golang-db-sinar-harapan-makmur/delivery/controller"
 	"github.com/jutionck/golang-db-sinar-harapan-makmur/delivery/middleware"
-	"github.com/jutionck/golang-db-sinar-harapan-makmur/repository"
-	"github.com/jutionck/golang-db-sinar-harapan-makmur/usecase"
+	"github.com/jutionck/golang-db-sinar-harapan-makmur/manager"
 	"github.com/sirupsen/logrus"
 )
 
 type Server struct {
-	vehicleUC     usecase.VehicleUseCase
-	customerUC    usecase.CustomerUseCase
-	employeeUC    usecase.EmployeeUseCase
-	transactionUC usecase.TransactionUseCase
-	engine        *gin.Engine
-	host          string
-	log           *logrus.Logger
-}
-
-func (s *Server) Run() {
-	s.initController()
-	err := s.engine.Run(s.host)
-	if err != nil {
-		panic(err)
-	}
+	ucManager manager.UseCaseManager
+	engine    *gin.Engine
+	host      string
+	log       *logrus.Logger
 }
 
 func (s *Server) initController() {
 	s.engine.Use(middleware.LogRequestMiddleware(s.log))
-	controller.NewVehicleController(s.engine, s.vehicleUC)
-	controller.NewCustomerController(s.engine, s.customerUC)
-	controller.NewEmployeeController(s.engine, s.employeeUC)
-	controller.NewTransactionController(s.engine, s.transactionUC)
+	controller.NewVehicleController(s.engine, s.ucManager.VehicleUseCase())
+	controller.NewCustomerController(s.engine, s.ucManager.CustomerUseCase())
+	controller.NewEmployeeController(s.engine, s.ucManager.EmployeeUseCase())
+	controller.NewTransactionController(s.engine, s.ucManager.TransactionUseCase())
 }
 
 func NewServer() *Server {
@@ -42,28 +30,26 @@ func NewServer() *Server {
 	if err != nil {
 		fmt.Println(err)
 	}
-
-	dbConn, _ := config.NewDbConnection(c)
-	db := dbConn.Conn()
-
+	// infra manager
+	infraManager, _ := manager.NewInfraManager(c)
+	// repo manager
+	repoManager := manager.NewRepositoryManager(infraManager)
+	// use case manager
+	useCaseManager := manager.NewUseCaseManager(repoManager)
 	r := gin.Default()
-	logger := logrus.New()
-	vehicleRepo := repository.NewVehicleRepository(db)
-	customerRepo := repository.NewCustomerRepository(db)
-	employeeRepo := repository.NewEmployeeRepository(db)
-	transactionRepo := repository.NewTransactionRepository(db)
-	vehicleUC := usecase.NewVehicleUseCase(vehicleRepo)
-	customerUC := usecase.NewCustomerUseCase(customerRepo)
-	employeeUC := usecase.NewEmployeeUseCase(employeeRepo)
-	transactionUC := usecase.NewTransactionUseCase(transactionRepo, vehicleUC, customerUC, employeeUC)
 	host := fmt.Sprintf("%s:%s", c.ApiHost, c.ApiPort)
 	return &Server{
-		vehicleUC:     vehicleUC,
-		customerUC:    customerUC,
-		employeeUC:    employeeUC,
-		transactionUC: transactionUC,
-		engine:        r,
-		host:          host,
-		log:           logger,
+		ucManager: useCaseManager,
+		engine:    r,
+		host:      host,
+		log:       infraManager.Log(),
+	}
+}
+
+func (s *Server) Run() {
+	s.initController()
+	err := s.engine.Run(s.host)
+	if err != nil {
+		panic(err)
 	}
 }
