@@ -21,9 +21,15 @@ type DbConfig struct {
 	Driver   string
 }
 
+type FileConfig struct {
+	LogFilePath string
+	Env         string
+}
+
 type Config struct {
 	DbConfig
 	ApiConfig
+	FileConfig
 }
 
 func (c *Config) ReadConfigFile() error {
@@ -44,6 +50,10 @@ func (c *Config) ReadConfigFile() error {
 	c.ApiConfig = ApiConfig{
 		ApiHost: os.Getenv("API_HOST"),
 		ApiPort: os.Getenv("API_PORT"),
+	}
+
+	c.FileConfig = FileConfig{
+		LogFilePath: os.Getenv("REQUEST_FILE_PATH"),
 	}
 
 	if c.DbConfig.Host == "" || c.DbConfig.Port == "" || c.DbConfig.Name == "" ||
