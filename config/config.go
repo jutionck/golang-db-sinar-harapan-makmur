@@ -7,6 +7,11 @@ import (
 	"github.com/jutionck/golang-db-sinar-harapan-makmur/utils/common"
 )
 
+type ApiConfig struct {
+	ApiPort string
+	ApiHost string
+}
+
 type DbConfig struct {
 	Host     string
 	Port     string
@@ -18,6 +23,7 @@ type DbConfig struct {
 
 type Config struct {
 	DbConfig
+	ApiConfig
 }
 
 func (c *Config) ReadConfigFile() error {
@@ -35,11 +41,16 @@ func (c *Config) ReadConfigFile() error {
 		Driver:   os.Getenv("DB_DRIVER"),
 	}
 
-	if c.DbConfig.Host == "" || c.DbConfig.Port == "" || c.DbConfig.Name == "" ||
-		c.DbConfig.User == "" || c.DbConfig.Password == "" || c.DbConfig.Driver == "" {
-		return errors.New("missing required environment variables")
+	c.ApiConfig = ApiConfig{
+		ApiHost: os.Getenv("API_HOST"),
+		ApiPort: os.Getenv("API_PORT"),
 	}
 
+	if c.DbConfig.Host == "" || c.DbConfig.Port == "" || c.DbConfig.Name == "" ||
+		c.DbConfig.User == "" || c.DbConfig.Password == "" || c.DbConfig.Driver == "" || c.ApiConfig.ApiHost == "" ||
+		c.ApiConfig.ApiPort == "" {
+		return errors.New("missing required environment variables")
+	}
 	return nil
 }
 
