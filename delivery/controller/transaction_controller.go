@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/jutionck/golang-db-sinar-harapan-makmur/delivery/api"
 	"github.com/jutionck/golang-db-sinar-harapan-makmur/model/dto"
 	"github.com/jutionck/golang-db-sinar-harapan-makmur/model/entity"
 	"github.com/jutionck/golang-db-sinar-harapan-makmur/usecase"
@@ -13,12 +14,13 @@ import (
 type TransactionController struct {
 	router  *gin.Engine
 	usecase usecase.TransactionUseCase
+	api.BaseApi
 }
 
 func (e *TransactionController) createHandler(c *gin.Context) {
 	var payload dto.TransactionRequestDto
 	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"err": err.Error()})
+		e.NewErrorErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 	// sebaiknya ini di taruh di usecase
@@ -32,30 +34,29 @@ func (e *TransactionController) createHandler(c *gin.Context) {
 		Qty:      payload.Qty,
 	}
 	if err := e.usecase.RegisterNewTransaction(newTransactionPayload); err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"err": err.Error()})
+		e.NewErrorErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusCreated, payload)
+	e.NewSuccessSingleResponseCreated(c, payload, "OK")
 }
 
 func (e *TransactionController) listHandler(c *gin.Context) {
-	vehicles, err := e.usecase.FindAllTransaction()
-
+	transactions, err := e.usecase.FindAllTransaction()
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "Failed to retrieve employee data"})
+		e.NewErrorErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, vehicles)
+	c.JSON(http.StatusOK, transactions)
 }
 
 func (e *TransactionController) getByIDHandler(c *gin.Context) {
 	id := c.Param("id")
-	vehicle, err := e.usecase.FindTransactionById(id)
+	transaction, err := e.usecase.FindTransactionById(id)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "Failed to retrieve employee data"})
+		e.NewErrorErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, vehicle)
+	e.NewSuccessSingleResponse(c, transaction, "OK")
 }
 
 func NewTransactionController(r *gin.Engine, usecase usecase.TransactionUseCase) *TransactionController {

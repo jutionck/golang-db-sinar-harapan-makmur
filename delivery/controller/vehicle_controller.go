@@ -3,68 +3,79 @@ package controller
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/jutionck/golang-db-sinar-harapan-makmur/delivery/api"
 	"github.com/jutionck/golang-db-sinar-harapan-makmur/model/entity"
 	"github.com/jutionck/golang-db-sinar-harapan-makmur/usecase"
+	"github.com/jutionck/golang-db-sinar-harapan-makmur/utils/common"
 	"net/http"
 )
 
 type VehicleController struct {
 	router  *gin.Engine
 	usecase usecase.VehicleUseCase
+	api.BaseApi
 }
 
 func (v *VehicleController) createHandler(c *gin.Context) {
 	var payload entity.Vehicle
 	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"err": err.Error()})
+		v.NewErrorErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 	payload.Id = uuid.New().String()
 	if err := v.usecase.RegisterNewVehicle(payload); err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"err": err.Error()})
+		v.NewErrorErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusCreated, payload)
+	v.NewSuccessSingleResponseCreated(c, payload, "OK")
 }
 
 func (v *VehicleController) updateHandler(c *gin.Context) {
 	var payload entity.Vehicle
 	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"err": err.Error()})
+		v.NewErrorErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 	if err := v.usecase.UpdateVehicle(payload); err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"err": err.Error()})
+		v.NewErrorErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, payload)
+	v.NewSuccessSingleResponse(c, payload, "OK")
 }
 
 func (v *VehicleController) listHandler(c *gin.Context) {
-	vehicles, err := v.usecase.FindAllVehicle()
-
+	requestQueryParams, err := common.ValidateRequestQueryParams(c)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "Failed to retrieve vehicle data"})
+		v.NewErrorErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, vehicles)
+	vehicles, paging, err := v.usecase.Paging(requestQueryParams)
+	if err != nil {
+		v.NewErrorErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	var vehicleInterface []interface{}
+	for _, v := range vehicles {
+		vehicleInterface = append(vehicleInterface, v)
+	}
+	v.NewSuccessPageResponse(c, vehicleInterface, "OK", paging)
 }
 
 func (v *VehicleController) getByIDHandler(c *gin.Context) {
 	id := c.Param("id")
 	vehicle, err := v.usecase.GetVehicle(id)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "Failed to retrieve vehicle data"})
+		v.NewErrorErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, vehicle)
+	v.NewSuccessSingleResponse(c, vehicle, "OK")
 }
 
 func (v *VehicleController) deleteHandler(c *gin.Context) {
 	id := c.Param("id")
 	err := v.usecase.DeleteVehicle(id)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"err": err.Error()})
+		v.NewErrorErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 	c.String(http.StatusNoContent, "")

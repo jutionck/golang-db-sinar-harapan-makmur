@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/jutionck/golang-db-sinar-harapan-makmur/delivery/api"
 	"github.com/jutionck/golang-db-sinar-harapan-makmur/model/dto"
 	"github.com/jutionck/golang-db-sinar-harapan-makmur/model/entity"
 	"github.com/jutionck/golang-db-sinar-harapan-makmur/usecase"
@@ -13,12 +14,13 @@ import (
 type EmployeeController struct {
 	router  *gin.Engine
 	usecase usecase.EmployeeUseCase
+	api.BaseApi
 }
 
 func (e *EmployeeController) createHandler(c *gin.Context) {
 	var payload dto.EmployeeDto
 	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"err": err.Error()})
+		e.NewErrorErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 	payload.Id = uuid.New().String()
@@ -35,29 +37,29 @@ func (e *EmployeeController) createHandler(c *gin.Context) {
 		Manager:     &entity.Employee{Id: sql.NullString{String: payload.ManagerId}},
 	}
 	if err := e.usecase.RegisterNewEmployee(newEmployee); err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"err": err.Error()})
+		e.NewErrorErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusCreated, payload)
+	e.NewSuccessSingleResponseCreated(c, payload, "OK")
 }
 
 func (e *EmployeeController) updateHandler(c *gin.Context) {
 	var payload entity.Employee
 	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"err": err.Error()})
+		e.NewErrorErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 	if err := e.usecase.UpdateEmployee(payload); err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"err": err.Error()})
+		e.NewErrorErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, payload)
+	e.NewSuccessSingleResponse(c, payload, "OK")
 }
 
 func (e *EmployeeController) listHandler(c *gin.Context) {
 	vehicles, err := e.usecase.FindAllEmployee()
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		e.NewErrorErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 	var vehicleResponses []dto.EmployeeDto
@@ -82,7 +84,7 @@ func (e *EmployeeController) getByIDHandler(c *gin.Context) {
 	id := c.Param("id")
 	vehicle, err := e.usecase.GetEmployee(id)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "Failed to retrieve employee data"})
+		e.NewErrorErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 	vehicleResponse := dto.EmployeeDto{
@@ -97,14 +99,14 @@ func (e *EmployeeController) getByIDHandler(c *gin.Context) {
 		Salary:      vehicle.Salary.Int64,
 		ManagerId:   vehicle.Manager.Id.String,
 	}
-	c.JSON(http.StatusOK, vehicleResponse)
+	e.NewSuccessSingleResponse(c, vehicleResponse, "OK")
 }
 
 func (e *EmployeeController) deleteHandler(c *gin.Context) {
 	id := c.Param("id")
 	err := e.usecase.DeleteEmployee(id)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"err": err.Error()})
+		e.NewErrorErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 	c.String(http.StatusNoContent, "")
