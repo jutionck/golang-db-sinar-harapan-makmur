@@ -7,22 +7,29 @@ import (
 	"github.com/jutionck/golang-db-sinar-harapan-makmur/delivery/controller"
 	"github.com/jutionck/golang-db-sinar-harapan-makmur/delivery/middleware"
 	"github.com/jutionck/golang-db-sinar-harapan-makmur/manager"
+	"github.com/jutionck/golang-db-sinar-harapan-makmur/usecase"
+	"github.com/jutionck/golang-db-sinar-harapan-makmur/utils/security"
 	"github.com/sirupsen/logrus"
 )
 
 type Server struct {
-	ucManager manager.UseCaseManager
-	engine    *gin.Engine
-	host      string
-	log       *logrus.Logger
+	ucManager    manager.UseCaseManager
+	authUseCase  usecase.AuthenticationUseCase
+	tokenService security.AccessToken
+	engine       *gin.Engine
+	host         string
+	log          *logrus.Logger
 }
 
 func (s *Server) initController() {
 	s.engine.Use(middleware.LogRequestMiddleware(s.log))
-	controller.NewVehicleController(s.engine, s.ucManager.VehicleUseCase())
-	controller.NewCustomerController(s.engine, s.ucManager.CustomerUseCase())
-	controller.NewEmployeeController(s.engine, s.ucManager.EmployeeUseCase())
-	controller.NewTransactionController(s.engine, s.ucManager.TransactionUseCase())
+	authMiddleware := middleware.NewTokenValidator(s.tokenService)
+	controller.NewVehicleController(s.engine, s.ucManager.VehicleUseCase(), authMiddleware)
+	controller.NewCustomerController(s.engine, s.ucManager.CustomerUseCase(), authMiddleware)
+	controller.NewEmployeeController(s.engine, s.ucManager.EmployeeUseCase(), authMiddleware)
+	controller.NewTransactionController(s.engine, s.ucManager.TransactionUseCase(), authMiddleware)
+	controller.NewUserController(s.engine, s.ucManager.UserUseCase())
+	controller.NewAuthController(s.engine, s.authUseCase)
 }
 
 func NewServer() *Server {
@@ -36,13 +43,18 @@ func NewServer() *Server {
 	repoManager := manager.NewRepositoryManager(infraManager)
 	// use case manager
 	useCaseManager := manager.NewUseCaseManager(repoManager)
+	// token
+	tokenService := security.NewAccessToken(c.TokenConfig)
+	authUseCase := usecase.NewAuthenticationUseCase(repoManager.UserRepo(), tokenService)
 	r := gin.Default()
 	host := fmt.Sprintf("%s:%s", c.ApiHost, c.ApiPort)
 	return &Server{
-		ucManager: useCaseManager,
-		engine:    r,
-		host:      host,
-		log:       infraManager.Log(),
+		ucManager:    useCaseManager,
+		authUseCase:  authUseCase,
+		tokenService: tokenService,
+		engine:       r,
+		host:         host,
+		log:          infraManager.Log(),
 	}
 }
 

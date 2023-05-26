@@ -8,10 +8,15 @@ type RepositoryManager interface {
 	CustomerRepo() repository.CustomerRepository
 	EmployeeRepo() repository.EmployeeRepository
 	TransactionRepo() repository.TransactionRepository
+	UserRepo() repository.UserRepository
 }
 
 type repositoryManager struct {
 	infra InfraManager
+}
+
+func (r *repositoryManager) UserRepo() repository.UserRepository {
+	return repository.NewUserRepository(r.infra.Conn())
 }
 
 func (r *repositoryManager) CustomerRepo() repository.CustomerRepository {

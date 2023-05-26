@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	"github.com/jutionck/golang-db-sinar-harapan-makmur/config"
+	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 )
 

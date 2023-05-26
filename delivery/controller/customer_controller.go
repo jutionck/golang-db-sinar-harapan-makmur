@@ -4,14 +4,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jutionck/golang-db-sinar-harapan-makmur/delivery/api"
+	"github.com/jutionck/golang-db-sinar-harapan-makmur/delivery/middleware"
 	"github.com/jutionck/golang-db-sinar-harapan-makmur/model/entity"
 	"github.com/jutionck/golang-db-sinar-harapan-makmur/usecase"
 	"net/http"
 )
 
 type CustomerController struct {
-	router  *gin.Engine
-	usecase usecase.CustomerUseCase
+	router         *gin.Engine
+	authMiddleware middleware.AuthTokenMiddleware
+	usecase        usecase.CustomerUseCase
 	api.BaseApi
 }
 
@@ -71,15 +73,16 @@ func (cc *CustomerController) deleteHandler(c *gin.Context) {
 	c.String(http.StatusNoContent, "")
 }
 
-func NewCustomerController(r *gin.Engine, usecase usecase.CustomerUseCase) *CustomerController {
+func NewCustomerController(r *gin.Engine, usecase usecase.CustomerUseCase, authMiddleware middleware.AuthTokenMiddleware) *CustomerController {
 	controller := CustomerController{
-		router:  r,
-		usecase: usecase,
+		router:         r,
+		usecase:        usecase,
+		authMiddleware: authMiddleware,
 	}
-	r.GET("/customers", controller.listHandler)
-	r.GET("/customers/:id", controller.getByIDHandler)
-	r.POST("/customers", controller.createHandler)
-	r.PUT("/customers", controller.updateHandler)
-	r.DELETE("/customers/:id", controller.deleteHandler)
+	r.GET("/customers", authMiddleware.RequireToken(), controller.listHandler)
+	r.GET("/customers/:id", authMiddleware.RequireToken(), controller.getByIDHandler)
+	r.POST("/customers", authMiddleware.RequireToken(), controller.createHandler)
+	r.PUT("/customers", authMiddleware.RequireToken(), controller.updateHandler)
+	r.DELETE("/customers/:id", authMiddleware.RequireToken(), controller.deleteHandler)
 	return &controller
 }

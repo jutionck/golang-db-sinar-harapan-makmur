@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jutionck/golang-db-sinar-harapan-makmur/delivery/api"
+	"github.com/jutionck/golang-db-sinar-harapan-makmur/delivery/middleware"
 	"github.com/jutionck/golang-db-sinar-harapan-makmur/model/dto"
 	"github.com/jutionck/golang-db-sinar-harapan-makmur/model/entity"
 	"github.com/jutionck/golang-db-sinar-harapan-makmur/usecase"
@@ -12,8 +13,9 @@ import (
 )
 
 type TransactionController struct {
-	router  *gin.Engine
-	usecase usecase.TransactionUseCase
+	router         *gin.Engine
+	authMiddleware middleware.AuthTokenMiddleware
+	usecase        usecase.TransactionUseCase
 	api.BaseApi
 }
 
@@ -59,13 +61,14 @@ func (e *TransactionController) getByIDHandler(c *gin.Context) {
 	e.NewSuccessSingleResponse(c, transaction, "OK")
 }
 
-func NewTransactionController(r *gin.Engine, usecase usecase.TransactionUseCase) *TransactionController {
+func NewTransactionController(r *gin.Engine, usecase usecase.TransactionUseCase, authMiddleware middleware.AuthTokenMiddleware) *TransactionController {
 	controller := TransactionController{
-		router:  r,
-		usecase: usecase,
+		router:         r,
+		usecase:        usecase,
+		authMiddleware: authMiddleware,
 	}
-	r.GET("/transactions", controller.listHandler)
-	r.GET("/transactions/:id", controller.getByIDHandler)
-	r.POST("/transactions", controller.createHandler)
+	r.GET("/transactions", authMiddleware.RequireToken(), controller.listHandler)
+	r.GET("/transactions/:id", authMiddleware.RequireToken(), controller.getByIDHandler)
+	r.POST("/transactions", authMiddleware.RequireToken(), controller.createHandler)
 	return &controller
 }

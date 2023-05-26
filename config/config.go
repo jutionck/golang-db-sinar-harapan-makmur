@@ -2,7 +2,10 @@ package config
 
 import (
 	"errors"
+	"github.com/golang-jwt/jwt"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/jutionck/golang-db-sinar-harapan-makmur/utils/common"
 )
@@ -26,10 +29,18 @@ type FileConfig struct {
 	Env         string
 }
 
+type TokenConfig struct {
+	ApplicationName     string
+	JwtSignatureKey     string
+	JwtSigningMethod    *jwt.SigningMethodHMAC
+	AccessTokenLifeTime time.Duration
+}
+
 type Config struct {
 	DbConfig
 	ApiConfig
 	FileConfig
+	TokenConfig
 }
 
 func (c *Config) ReadConfigFile() error {
@@ -54,6 +65,18 @@ func (c *Config) ReadConfigFile() error {
 
 	c.FileConfig = FileConfig{
 		LogFilePath: os.Getenv("REQUEST_FILE_PATH"),
+	}
+
+	tokenExpire, err := strconv.Atoi(os.Getenv("TOKEN_EXPIRE"))
+	accessTokenLifeTime := time.Duration(tokenExpire) * time.Minute
+	if err != nil {
+		return errors.New("failed to convert token expire")
+	}
+	c.TokenConfig = TokenConfig{
+		ApplicationName:     os.Getenv("TOKEN_APP_NAME"),
+		JwtSignatureKey:     os.Getenv("TOKEN_SECRET"),
+		JwtSigningMethod:    jwt.SigningMethodHS256,
+		AccessTokenLifeTime: accessTokenLifeTime,
 	}
 
 	if c.DbConfig.Host == "" || c.DbConfig.Port == "" || c.DbConfig.Name == "" ||

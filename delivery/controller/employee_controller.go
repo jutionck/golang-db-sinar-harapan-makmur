@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jutionck/golang-db-sinar-harapan-makmur/delivery/api"
+	"github.com/jutionck/golang-db-sinar-harapan-makmur/delivery/middleware"
 	"github.com/jutionck/golang-db-sinar-harapan-makmur/model/dto"
 	"github.com/jutionck/golang-db-sinar-harapan-makmur/model/entity"
 	"github.com/jutionck/golang-db-sinar-harapan-makmur/usecase"
@@ -12,8 +13,9 @@ import (
 )
 
 type EmployeeController struct {
-	router  *gin.Engine
-	usecase usecase.EmployeeUseCase
+	router         *gin.Engine
+	authMiddleware middleware.AuthTokenMiddleware
+	usecase        usecase.EmployeeUseCase
 	api.BaseApi
 }
 
@@ -112,15 +114,16 @@ func (e *EmployeeController) deleteHandler(c *gin.Context) {
 	c.String(http.StatusNoContent, "")
 }
 
-func NewEmployeeController(r *gin.Engine, usecase usecase.EmployeeUseCase) *EmployeeController {
+func NewEmployeeController(r *gin.Engine, usecase usecase.EmployeeUseCase, authMiddleware middleware.AuthTokenMiddleware) *EmployeeController {
 	controller := EmployeeController{
-		router:  r,
-		usecase: usecase,
+		router:         r,
+		usecase:        usecase,
+		authMiddleware: authMiddleware,
 	}
-	r.GET("/employees", controller.listHandler)
-	r.GET("/employees/:id", controller.getByIDHandler)
-	r.POST("/employees", controller.createHandler)
-	r.PUT("/employees", controller.updateHandler)
-	r.DELETE("/employees/:id", controller.deleteHandler)
+	r.GET("/employees", authMiddleware.RequireToken(), controller.listHandler)
+	r.GET("/employees/:id", authMiddleware.RequireToken(), controller.getByIDHandler)
+	r.POST("/employees", authMiddleware.RequireToken(), controller.createHandler)
+	r.PUT("/employees", authMiddleware.RequireToken(), controller.updateHandler)
+	r.DELETE("/employees/:id", authMiddleware.RequireToken(), controller.deleteHandler)
 	return &controller
 }
